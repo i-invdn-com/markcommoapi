@@ -1,0 +1,114 @@
+ var app = angular.module('myApp', ['isteven-multi-select']);
+app.controller('customersCtrl', function( $scope, $http, $interval , $timeout) {
+    $scope.stop = true;
+    $scope.names =  [
+       "Commodity",
+       "Buy",
+       "Sell",
+       "Price",
+       "High",
+       "Low",
+       "Chg%",
+       "Open",
+       "Close",
+       
+    ];
+
+    $scope.objectList = [];
+    
+    $scope.inputSymbolList = [];
+    var symbolList = [];
+    $scope.outputSymbolList = [];
+
+    var url = window.location.href;
+    var arr = url.split(":");
+    $scope.scheme = arr[0];
+
+    $scope.getData = function(){
+        
+        $http.get(`${$scope.scheme}://liverates.co.in/get/am/index.php`)
+        //$http.get(`https:///bse/index.php`)
+        .then(function (response) {
+            console.log(response.data);
+            $scope.objectList = response.data
+            if(symbolList.length<$scope.objectList.length){
+
+                for(var i = 0;i<$scope.objectList.length;i++ ){
+                    
+                    $scope.objectList[i]["ticked"]=true;
+                    var obj = $scope.objectList[i];
+                    symbolList.push(obj);
+                }
+                //symbolList.push({'test':'name'});
+                $scope.inputSymbolList = symbolList;
+                console.log(symbolList);
+            }
+        });
+    }
+
+    $interval(function () {
+    $http.get(`${$scope.scheme}://liverates.co.in/get/am/index.php`)
+    //$http.get(`///mdemo981/index.php`)
+        .then(function (response) {
+            console.log(response.data);
+            //$scope.objectList = response.data
+            //alert( $scope.objectList = response.data )
+            poll(response.data);
+    });
+    },500);
+    
+    /*var fClick = function(){
+        //$scope.outputBrowsers = [{'name':'test'}];
+        var obj = {
+            'test':'name'
+        };
+        var arr = [];
+        arr.push(obj);
+        $scope.outputBrowsers=arr;
+    };*/
+
+    var poll = function (pollData) {
+
+        //simulate stock values rising and falling
+        if(pollData != undefined){
+        for (var i = 0; i < $scope.objectList.length; i++) {
+            
+                //$scope.objectList[i].symb =parseFloat(pollData[i].symb) ;
+                $scope.objectList[i].buy =parseFloat(pollData[i].buy) ;
+                $scope.objectList[i].sell = parseFloat(pollData[i].sell);
+                $scope.objectList[i].rate =parseFloat(pollData[i].rate) ;
+                $scope.objectList[i].low = parseFloat(pollData[i].low);
+                $scope.objectList[i].high = parseFloat(pollData[i].high);
+                
+                $scope.objectList[i].chg = parseFloat(pollData[i].chg);
+                $scope.objectList[i].open = parseFloat(pollData[i].open);
+                $scope.objectList[i].chgper = parseFloat(pollData[i].chgper);
+            
+        }
+        }
+    
+    };
+    
+});
+
+app.directive('highlighter', function ($timeout) {
+    return {
+        restrict: 'A',
+        link: function (scope, element, attrs) {
+            scope.$watch(attrs.highlighter, function (nv, ov) {
+                if (nv !== ov) {
+                    var newclass= nv < ov ? 'highlight-red' : 'highlight-green';
+                    
+                    // apply class
+                    element.addClass(newclass);
+                    
+                    // auto remove after some delay
+                    $timeout(function () {
+                        element.removeClass(newclass);
+                    }, 300);
+                }
+            });
+        }
+    };
+});
+    
